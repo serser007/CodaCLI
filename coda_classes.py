@@ -84,10 +84,10 @@ class CodaInteractiveDocument:
                     opened_boxes.add(box)
                     opened += 1
                     actions.click(box).perform()
-                    sleep(0.1)
+                    sleep(0.3)
             if opened == 0:
                 break
-            sleep(0.5)
+            sleep(0.6)
 
     def remove_page(self, page_id):
         actions = ActionChains(self._browser)
