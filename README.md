@@ -11,3 +11,4 @@ You will need to provide API KEY from your account settings on first sturtup.
     - list-doc                        list all docs (id & name)
     - list-doc <ws-id>                list all docs in workspace <ws-id> (id & name)
     - rename_pages <doc-id> <prefix>  adds prefix <prefix> to all pages in document <doc-id>
+    - remove-pages <doc-id> <prefix>  removes pages with prefix <prefix> from document <doc-id>
