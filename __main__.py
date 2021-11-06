@@ -75,12 +75,12 @@ def list_workspaces(workspaces):
 def print_help():
     print("""
     Help
-    - help:                           this page
-    - list-ws:                        list all workspaces
-    - list-doc:                       list all docs
-    - list-doc <ws-id>:               list all docs in workspace <ws-id>
-    - rename-pages <doc-id> <prefix>: adds prefix <prefix> to all pages in document <doc-id>
-    - remove-pages <doc-id> <prefix>: removes pages with prefix <prefix> from document <doc-id>
+    - help                            this page
+    - list-ws                         list all workspaces
+    - list-doc                        list all docs
+    - list-doc <ws-id>                list all docs in workspace <ws-id>
+    - rename-pages <doc-id> <prefix>  adds prefix <prefix> to all pages in document <doc-id>
+    - remove-pages <doc-id> <prefix>  removes pages with prefix <prefix> from document <doc-id>
     """)
 
 
