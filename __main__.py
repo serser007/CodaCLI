@@ -7,6 +7,12 @@ from coda import Coda
 from coda_exceptions import CodaInvalidApiKeyException
 from thread_pool import ThreadPool
 
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    PATH = os.path.dirname(sys.executable)
+else:
+    PATH = os.path.dirname(os.path.abspath(__file__))
+os.chdir(PATH)
+
 logging.basicConfig(level=logging.FATAL)
 
 GLOBAL_THREAD_POOL = ThreadPool(12)
