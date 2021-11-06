@@ -1,0 +1,3 @@
+class CodaInvalidApiKeyException(Exception):
+    pass
+
