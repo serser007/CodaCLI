@@ -1,15 +1,12 @@
-from coda import Coda
-
-
 class CodaWorkspace:
-    def __init__(self, coda: Coda, **kwargs):
+    def __init__(self, coda, **kwargs):
         self._coda = coda
         self.name = kwargs.get("name", None)
         self.id = kwargs.get("id", None)
 
 
 class CodaPageRef:
-    def __init__(self, coda: Coda, **kwargs):
+    def __init__(self, coda, **kwargs):
         self._coda = coda
         self.name = kwargs.get("name", None)
         self.id = kwargs.get("id", None)
@@ -20,7 +17,7 @@ class CodaPageRef:
 
 
 class CodaPage:
-    def __init__(self, coda: Coda, **kwargs):
+    def __init__(self, coda, **kwargs):
         self._coda = coda
         self.name = kwargs.get("name", None)
         self.id = kwargs.get("id", None)
@@ -35,7 +32,7 @@ class CodaPage:
 
 
 class CodaDocument:
-    def __init__(self, coda: Coda, **kwargs):
+    def __init__(self, coda, **kwargs):
         self._coda = coda
         self.name = kwargs.get("name", None)
         self.id = kwargs.get("id", None)
