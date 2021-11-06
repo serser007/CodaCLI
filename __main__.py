@@ -4,28 +4,28 @@ import sys
 import logging
 
 from coda import Coda
-from coda_classes import CodaPageRef
 from coda_exceptions import CodaInvalidApiKeyException
 from thread_pool import ThreadPool
 
 logging.basicConfig(level=logging.FATAL)
 
-GLOBAL_THREAD_POOL = ThreadPool()
+GLOBAL_THREAD_POOL = ThreadPool(12)
 APIKEY_PATH = "apikey.key"
 
 
 def rename_page(page, prefix):
-    if isinstance(page, CodaPageRef):
-        page = page.fetch()
-
     def f():
-        page.update(name=f"{prefix}{page.name}")
+        code = 0
+        while True:
+            code = page.update(name=f"{prefix}{page.name}").status_code
+            if code == 202:
+                break
+            sleep(30)
+
         print(".", end='')
         sys.stdout.flush()
 
     GLOBAL_THREAD_POOL.add_thread(f, tag="RP")
-    for child in page.children:
-        GLOBAL_THREAD_POOL.add_thread(rename_page, (child, prefix), "RP")
 
 
 def rename_pages(pages, prefix):
@@ -34,6 +34,20 @@ def rename_pages(pages, prefix):
         GLOBAL_THREAD_POOL.add_thread(rename_page, (page, prefix), "RP")
     while GLOBAL_THREAD_POOL.count("RP") > 0:
         sleep(1)
+    print("\n--- Done!")
+
+
+def remove_page(page, prefix, interactive_document):
+    print(".", end='')
+    sys.stdout.flush()
+    if page.name.startswith(prefix):
+        interactive_document.remove_page(page.browser_id)
+
+
+def remove_pages(pages, prefix, interactive_document):
+    print("Removing")
+    for page in pages:
+        remove_page(page, prefix, interactive_document)
     print("\n--- Done!")
 
 
@@ -59,7 +73,8 @@ def print_help():
     - list-ws:                        list all workspaces
     - list-doc:                       list all docs
     - list-doc <ws-id>:               list all docs in workspace <ws-id>
-    - rename_pages <doc-id> <prefix>: adds prefix <prefix> to all pages in document <doc-id>
+    - rename-pages <doc-id> <prefix>: adds prefix <prefix> to all pages in document <doc-id>
+    - remove-pages <doc-id> <prefix>: removes pages with prefix <prefix> from document <doc-id>
     """)
 
 
@@ -79,7 +94,6 @@ if __name__ == "__main__":
             file.write(api_key)
 
     coda = Coda(api_key)
-
     try:
         len_args = len(sys.argv)
         if len_args > 1:
@@ -90,8 +104,10 @@ if __name__ == "__main__":
                 list_documents(coda.get_documents())
             elif cmd == "list-doc" and len_args == 3:
                 list_documents(coda.get_documents(workspaceId=sys.argv[2]))
-            elif cmd == "rename_pages" and len_args == 4:
+            elif cmd == "rename-pages" and len_args == 4:
                 rename_pages(coda.get_pages(sys.argv[2]), sys.argv[3])
+            elif cmd == "remove-pages" and len_args == 4:
+                remove_pages(coda.get_pages(sys.argv[2]), sys.argv[3], coda.get_interactive_document(sys.argv[2]))
             elif cmd == "help" and len_args == 2:
                 print_help()
             else:

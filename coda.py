@@ -9,15 +9,16 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver import ActionChains
 from webdriver_manager.chrome import ChromeDriverManager
 
-from coda_classes import CodaWorkspace, CodaDocument, CodaPage
+from coda_classes import CodaWorkspace, CodaDocument, CodaPage, CodaInteractiveDocument
 from coda_exceptions import CodaInvalidApiKeyException
 from thread_pool import ThreadPool
 
 
 class Coda:
-    def __init__(self, key: str, max_threads=10):
+    def __init__(self, key: str, max_threads=5):
         self._headers = {"Authorization": f"Bearer {key}"}
         self._cookie_path = "cookie_bar.ck"
         self._threads = 0
@@ -64,29 +65,22 @@ class Coda:
             cookies_json = json.dumps(cookies)
             file.writelines(cookies_json)
 
-    def _prepare_browser(self, headless=True):
-        options = Options()
-        options.add_experimental_option("excludeSwitches", ["enable-logging"])
-        if headless:
-            options.add_argument('--headless')
-            options.add_argument('--disable-gpu')
-        path = ChromeDriverManager(log_level=logging.FATAL).install()
-        service = Service(path, 0, None, None)
-        browser = webdriver.Chrome(service=service, options=options)
-        self._load_cookies(browser)
-        return browser
+    @staticmethod
+    def _is_signed(browser):
+        uri = "https://coda.io/workspaces"
+        browser.get(uri)
+        return browser.current_url.startswith(uri)
 
     def _sign_in(self):
         uri = "https://coda.io/workspaces"
         auth_completed = False
         while not auth_completed:
             try:
-                browser = self._prepare_browser()
-                browser.get(uri)
-                if browser.current_url.startswith(uri):
+                browser = self.prepare_browser()
+                if Coda._is_signed(browser):
                     browser.close()
                     break
-                browser = self._prepare_browser(False)
+                browser = self.prepare_browser(False)
                 browser.get(uri)
                 while not browser.current_url.startswith(uri):
                     sleep(1)
@@ -111,19 +105,29 @@ class Coda:
 
     def _get_workspace_name(self, workspace_id):
         uri = f"https://coda.io/workspaces/{workspace_id}/docs"
-        browser = self._prepare_browser()
+        browser = self.prepare_browser()
         browser.get(uri)
-        while browser.current_url != uri:
-            self._sign_in_required = True
-            sleep(5)
-            self._load_cookies(browser)
-            browser.get(uri)
-
         name = ""
         while name == "":
             name = browser.find_element(By.XPATH, "//h1[@data-coda-ui-id='coda-dashboard-header-title']").text
         browser.close()
         return name
+
+    def prepare_browser(self, headless=True):
+        options = Options()
+        options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        if headless:
+            options.add_argument('--headless')
+            options.add_argument('--disable-gpu')
+        path = ChromeDriverManager(log_level=logging.FATAL).install()
+        service = Service(path, 0, None, None)
+        browser = webdriver.Chrome(service=service, options=options)
+        self._load_cookies(browser)
+        while not Coda._is_signed(browser):
+            self._sign_in_required = True
+            sleep(5)
+            self._load_cookies(browser)
+        return browser
 
     def get_workspaces(self):
         queue = dict()
@@ -155,6 +159,9 @@ class Coda:
         res = Coda._get(uri, headers=self._headers).json()
         return CodaDocument(self, **res)
 
+    def get_interactive_document(self, document_id: str):
+        return CodaInteractiveDocument(self, document_id)
+
     def get_pages(self, document_id: str):
         uri = f"https://coda.io/apis/v1/docs/{document_id}/pages"
         return map(lambda page: CodaPage(self, document_id=document_id, **page), self._page_enumerable(uri))
@@ -167,3 +174,4 @@ class Coda:
     def update_page(self, document_id: str, page_id: str, **kwargs):
         uri = f"https://coda.io/apis/v1/docs/{document_id}/pages/{page_id}"
         req = Coda._put(uri, headers=self._headers, json=kwargs)
+        return req

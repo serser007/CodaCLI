@@ -4,19 +4,19 @@ from time import sleep
 
 
 class ThreadPool(Thread):
-    def __init__(self, max_threads=10, max_awaiting=10):
+    def __init__(self, max_threads=10):
         super(ThreadPool, self).__init__(daemon=True)
         self._max_threads = max_threads
         self._threads = 0
         self._actions = deque()
         self._tags = dict()
-        self._max_awaiting = max_awaiting
         super().start()
 
     def _f(self, f):
         try:
             f[0](*f[1])
         except:
+            print("c")
             pass
 
         self._tags[f[2]] -= 1
@@ -30,10 +30,12 @@ class ThreadPool(Thread):
     def run(self):
         while True:
             while self._threads < self._max_threads and len(self._actions) > 0:
+                sleep(1)
                 self._threads += 1
                 action = self._actions.pop()
                 thread = Thread(target=self._f, args=[action], daemon=True)
                 thread.start()
+            sleep(0.1)
 
     def add_thread(self, f, args=(), tag=""):
         if tag not in self._tags.keys():
@@ -41,6 +43,3 @@ class ThreadPool(Thread):
         else:
             self._tags[tag] += 1
         self._actions.append((f, args, tag))
-
-        while len(self._actions) == self._max_awaiting:
-            sleep(0.1)
